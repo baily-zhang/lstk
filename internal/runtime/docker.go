@@ -71,10 +71,22 @@ func probeSocket(candidates ...string) string {
 	return ""
 }
 
+// SocketPath returns the Unix socket path used by the Docker client.
+// Returns the actual path for the standard /var/run/docker.sock so callers
+// can bind-mount it into containers. Returns empty string for non-standard
+// sockets (Colima, OrbStack) which communicate with VMs and cannot be
+// bind-mounted. Called by internal/container/start.go to decide whether
+// to add a Docker socket bind-mount when starting LocalStack.
 func (d *DockerRuntime) SocketPath() string {
 	host := d.client.DaemonHost()
 	if strings.HasPrefix(host, "unix://") {
-		return strings.TrimPrefix(host, "unix://")
+		sock := strings.TrimPrefix(host, "unix://")
+		// Skip bind-mount for non-standard sockets (Colima, OrbStack, etc.)
+		// These sockets communicate with VMs and cannot be bind-mounted
+		if sock != "/var/run/docker.sock" {
+			return ""
+		}
+		return sock
 	}
 	return ""
 }
