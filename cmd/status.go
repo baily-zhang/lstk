@@ -25,9 +25,19 @@ func newStatusCmd(cfg *env.Env, tel *telemetry.Client) *cobra.Command {
 		RunE: commandWithTelemetry("status", tel, func(cmd *cobra.Command, args []string) error {
 			rt, err := runtime.NewDockerRuntime(cfg.DockerHost)
 			if err != nil {
+				output.EmitError(output.NewPlainSink(os.Stdout), output.ErrorEvent{
+					Title:   "Docker is not available",
+					Summary: err.Error(),
+					Actions: []output.ErrorAction{
+						{Label: "See help:", Value: "lstk -h"},
+						{Label: "Install Docker:", Value: "https://docs.docker.com/get-docker/"},
+					},
+				})
+				return output.NewSilentError(err)
+			}
+			if err := checkRuntimeHealth(cmd.Context(), rt, cfg); err != nil {
 				return err
 			}
-
 			appCfg, err := config.Get()
 			if err != nil {
 				return fmt.Errorf("failed to get config: %w", err)

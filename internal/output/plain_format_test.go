@@ -84,19 +84,19 @@ func TestFormatEventLine(t *testing.T) {
 		{
 			name:   "error event title only",
 			event:  ErrorEvent{Title: "Connection failed"},
-			want:   "Error: Connection failed",
+			want:   "✗ Connection failed",
 			wantOK: true,
 		},
 		{
 			name:   "error event with summary",
 			event:  ErrorEvent{Title: "Auth failed", Summary: "Invalid token"},
-			want:   "Error: Auth failed\n  Invalid token",
+			want:   "✗ Auth failed\n> Invalid token",
 			wantOK: true,
 		},
 		{
 			name:   "error event with detail",
 			event:  ErrorEvent{Title: "Auth failed", Summary: "Invalid token", Detail: "Token expired at 2024-01-01"},
-			want:   "Error: Auth failed\n  Invalid token\n  Token expired at 2024-01-01",
+			want:   "✗ Auth failed\n> Invalid token\n  Token expired at 2024-01-01",
 			wantOK: true,
 		},
 		{
@@ -108,7 +108,7 @@ func TestFormatEventLine(t *testing.T) {
 					{Label: "Start Docker:", Value: "open -a Docker"},
 				},
 			},
-			want:   "Error: Docker not running\n  Cannot connect to Docker daemon\n  ==> Start Docker: open -a Docker",
+			want:   "✗ Docker not running\n> Cannot connect to Docker daemon\n\n==> Start Docker: open -a Docker",
 			wantOK: true,
 		},
 		{

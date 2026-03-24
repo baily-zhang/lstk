@@ -4,6 +4,16 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/charmbracelet/lipgloss"
+)
+
+var (
+	errorTitleStyle     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#C33820"))
+	errorSecondaryStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	errorActionStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("69"))
+	errorValueStyle     = lipgloss.NewStyle().Bold(true)
+	errorMutedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
 )
 
 // FormatEventLine converts an output event into a single display line.
@@ -130,21 +140,27 @@ func formatMessageEvent(e MessageEvent) string {
 
 func formatErrorEvent(e ErrorEvent) string {
 	var sb strings.Builder
-	sb.WriteString("Error: ")
-	sb.WriteString(e.Title)
+	sb.WriteString(errorTitleStyle.Render("✗ " + e.Title))
 	if e.Summary != "" {
-		sb.WriteString("\n  ")
+		sb.WriteString("\n")
+		sb.WriteString(errorSecondaryStyle.Render("> "))
 		sb.WriteString(e.Summary)
 	}
 	if e.Detail != "" {
 		sb.WriteString("\n  ")
-		sb.WriteString(e.Detail)
+		sb.WriteString(errorMutedStyle.Render(e.Detail))
 	}
-	for _, action := range e.Actions {
-		sb.WriteString("\n  " + ErrorActionPrefix)
-		sb.WriteString(action.Label)
-		sb.WriteString(" ")
-		sb.WriteString(action.Value)
+	if len(e.Actions) > 0 {
+		sb.WriteString("\n")
+		for i, action := range e.Actions {
+			sb.WriteString("\n")
+			if i > 0 {
+				sb.WriteString(errorMutedStyle.Render(ErrorActionPrefix + action.Label + " " + action.Value))
+			} else {
+				sb.WriteString(errorActionStyle.Render(ErrorActionPrefix+action.Label+" "))
+				sb.WriteString(errorValueStyle.Render(action.Value))
+			}
+		}
 	}
 	return sb.String()
 }
