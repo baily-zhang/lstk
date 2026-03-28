@@ -23,6 +23,8 @@ type runErrMsg struct {
 	err error
 }
 
+type hideHeaderMsg struct{}
+
 type styledLine struct {
 	text      string
 	highlight bool
@@ -141,15 +143,22 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.errorDisplay = a.errorDisplay.Show(msg)
 		a.spinner, _ = a.spinner.Stop()
 		return a, nil
+	case hideHeaderMsg:
+		a.hideHeader = true
+		return a, nil
 	case output.MessageEvent:
 		msgCopy := msg
 		line := styledLine{text: components.RenderMessage(msg), message: &msgCopy}
+		var cmd tea.Cmd
+		if msg.Severity == output.SeverityNote {
+			cmd = func() tea.Msg { return hideHeaderMsg{} }
+		}
 		if a.spinner.PendingStop() {
 			a.bufferedLines = appendLine(a.bufferedLines, line)
 		} else {
 			a.lines = appendLine(a.lines, line)
 		}
-		return a, nil
+		return a, cmd
 	case output.AuthEvent:
 		if msg.Preamble != "" {
 			a.lines = appendLine(a.lines, styledLine{text: "> " + msg.Preamble, secondary: true})
