@@ -32,7 +32,7 @@ func NewRootCmd(cfg *env.Env, tel *telemetry.Client, logger log.Logger) *cobra.C
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt, err := runtime.NewDockerRuntime(cfg.DockerHost)
 			if err != nil {
-				return err
+				return dockerNotAvailableError(err)
 			}
 			return runStart(cmd.Context(), cmd.Flags(), rt, cfg, tel, logger)
 		},
@@ -185,10 +185,24 @@ func isInteractiveMode(cfg *env.Env) bool {
 	return !cfg.NonInteractive && ui.IsInteractive()
 }
 
+// dockerNotAvailableError emits a styled Docker-not-available error and
+// returns a SilentError to suppress duplicate error printing.
+func dockerNotAvailableError(err error) error {
+	output.EmitError(output.NewPlainSink(os.Stdout), output.ErrorEvent{
+		Title:   "Docker is not available",
+		Summary: err.Error(),
+		Actions: []output.ErrorAction{
+			{Label: "See help:", Value: "lstk -h"},
+			{Label: "Install Docker:", Value: "https://docs.docker.com/get-docker/"},
+		},
+	})
+	return output.NewSilentError(err)
+}
+
 // checkRuntimeHealth checks if the runtime is healthy and emits an error
 // through the sink if not in interactive mode. Returns a SilentError to
 // suppress duplicate error printing.
-func checkRuntimeHealth(ctx context.Context, rt runtime.Runtime, cfg *env.Env) error {
+func checkRuntimeHealth(ctx context.Context, rt runtime.Runtime) error {
 	if err := rt.IsHealthy(ctx); err != nil {
 		rt.EmitUnhealthyError(output.NewPlainSink(os.Stdout), err)
 		return output.NewSilentError(err)
